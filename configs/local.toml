@@ -1,0 +1,16 @@
+name = "localhost"
+host = "127.0.0.1"
+
+[ping]
+
+[processes]
+prog = ["firefox.exe"]
+
+[http]
+port = 5500
+forceHttps = false
+url = "/"
+
+[example]
+everySec = 2.0
+

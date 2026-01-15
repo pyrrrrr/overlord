@@ -1,0 +1,29 @@
+name = "controller-01"
+host = "192.168.1.50"
+order = 10
+
+[ping]
+everySec = 2.0
+timeoutMs = 1500
+
+[udp]
+port = 5000
+serviceName = "UDP-BROADCASTER"
+
+[http]
+url = "/health"
+forceHttps = true
+everySec = 5
+
+[processes]
+port = 8765
+prog = ["controller.exe", "watchdog.exe"]
+
+
+[watchdog]
+serviceName = "HTTP-WATCHDOG"
+watchSource = "http"
+watchWhen = ["bad"]
+rescueCommand = 'calc"'
+recheckAfterSec = 10
+cooldownSec = 60

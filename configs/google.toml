@@ -1,0 +1,4 @@
+name = "google.de"
+
+[ping]
+host = "google.de"
