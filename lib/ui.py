@@ -17,65 +17,7 @@ from rich.console import Group
 from rich.align import Align
 
 from .core import *
-
-## todo linux key support
-import msvcrt
-
-class KeyReader:
-    def __init__(self) -> None:
-
-        self.isWindows = os.name == "nt"
-        self.enableTyping = False
-
-    def readCharNonBlocking(self) -> str | None:
-
-        if not msvcrt.kbhit():
-            return None
-
-        ch = msvcrt.getwch()
-
-
-        if self.enableTyping:return ch
-
-        if ch in ("\x00", "\xe0"): 
-            ch2 = msvcrt.getwch()
-
-            if ch2 == ";":  
-                return "KEY_F1"
-                
-    
-            
-
-
-            # vim nav keys
-            if ch2 == "H":
-                return "KEY_UP"
-            if ch2 == "P":
-                return "KEY_DOWN"
-            
-            if ch2 == "K":
-                return "KEY_LEFT"
-            if ch2 == "M":
-                return "KEY_RIGHT"
-
-            if ch2 == "\x8d":
-                return "CTRL_UP"
-            if ch2 == "\x91":
-                return "CTRL_DOWN"
-            
-            if ch2 == "s":
-                return "CTRL_LEFT"
-            if ch2 == "t":
-                return "CTRL_RIGHT"          
-            return None
-        
-        # ctl+h / l 
-        if ch == "\x08": # ctl + h
-            return "CTRL_LEFT"
-        if ch == "\x0c": # ctl + l
-            return "CTRL_RIGHT"
-        
-        return ch
+from .keyReader import KeyReader
 
 class RichUi:
     def __init__(
@@ -97,12 +39,6 @@ class RichUi:
         self.styleFooterCmd = "black on white"
         self.styleTableHeader = "bold magenta"
         self.styleSelected = "bold on blue"
-
-
-        
-        #self._fpsLastTs = time.time()
-        #self._fpsFrameCount = 0
-        #self._fpsValue = 0.0
 
         self.showOverlay = False
         self.overlayScrollPos = 0
@@ -189,6 +125,8 @@ class RichUi:
         if ch is None:
             return
         
+        self.core.writeLog(f"KEY: {repr(ch)}")
+        
         overlayCheck = False
         if self.showOverlay: 
             self.showOverlay  = False
@@ -202,11 +140,12 @@ class RichUi:
                 self.showOverlay = True
                 return
 
+            # TODO: commandBuf not clear on start commandMode
             if ch == ":":
                 self.showOverlay = False
                 self.commandMode = True
                 self.keyReader.enableTyping = True
-                self.commandBuf = ""
+                #self.commandBuf = ""
                 self.core.statusMsg = "cmd"
                 return
             
@@ -222,12 +161,13 @@ class RichUi:
 
                 return
 
-
-            if ch in ("CTRL_LEFT", "CTRL_H"):
+            
+            #TODO: make left or write window active
+            if ch == "CTRL_LEFT":
                 self.maximizeWindow += 1
                 return
 
-            if ch in ("CTRL_RIGHT", "CTRL_L"):
+            if ch == "CTRL_RIGHT":
                 self.maximizeWindow -= 1
                 return
 
@@ -290,6 +230,7 @@ class RichUi:
             return
 
         if ch in ("\r", "\n"):
+            # TODO: commandBuf replace only if command is not empty ?
             self.core.execCommand(self.commandBuf)
             self.commandMode = False
             self.keyReader.enableTyping = False
@@ -298,9 +239,10 @@ class RichUi:
 
             return
 
-        if ch in ("\x08", "\x7f"): # DELETE
+        if ch in ("\x08", "\x7f"):  # backspace
             self.commandBuf = self.commandBuf[:-1]
             return
+
 
         if ch == "\x1b": # ESC
             self.commandMode = False
