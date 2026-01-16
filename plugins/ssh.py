@@ -25,6 +25,11 @@ pluginMeta = PluginMeta(
     showInTable=False,
 )
 
+### TODO:
+### Check if ssh works correctly on start by calling ssh with something like whoami 
+### merge ssh into something like commands.py where ssh, cmd, ps1 are combinded.
+### or validation functions in utils. dunno
+###
 
 class SSH:
     def __init__(
