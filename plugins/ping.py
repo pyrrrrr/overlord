@@ -1,7 +1,8 @@
 # plugins/ping.py  (new PluginApi style)
 
 from __future__ import annotations
-
+import re
+import os
 import subprocess
 import threading
 import time
@@ -11,6 +12,7 @@ from lib.core import MonitorCore
 from lib.pluginApi import CommandSpec, PluginMeta, TableRow
 from lib.pluginBase import PluginBase
 from lib.utils import parseFloat, parseInt, parseStr
+
 
 typeName = "ping"
 
@@ -26,48 +28,64 @@ pluginMeta = PluginMeta(
 )
 
 
+
 class Ping:
     def __init__(self, *, targetHost: str, timeoutMs: int) -> None:
         self.targetHost = targetHost
         self.timeoutMs = int(timeoutMs)
 
-    def extractIp(self, outputStr: str) -> str | None:
-        for word in (outputStr or "").split():
-            candidate = word.rstrip(":")
-            if candidate.count(".") != 3:
-                continue
-            try:
-                a, b, c, d = (int(x) for x in candidate.split("."))
-            except Exception:
-                continue
-            if 0 <= a <= 255 and 0 <= b <= 255 and 0 <= c <= 255 and 0 <= d <= 255:
-                return candidate
-        return None
+        self._reIp = re.compile(
+            r"\b(?:(?:25[0-5]|2[0-4]\d|1?\d?\d)\.){3}"
+            r"(?:25[0-5]|2[0-4]\d|1?\d?\d)\b"
+        )
+        self._reTime = re.compile(r"time[=<]?\s*([0-9]+(?:\.[0-9]+)?)\s*ms", re.IGNORECASE)
 
-    def extractLatencyMs(self, outputStr: str) -> int | None:
-        s = (outputStr or "").replace("\n", " ")
-        for word in s.split():
-            if not word.startswith("time"):
-                continue
-            val = word[4:].lstrip("=<").rstrip("ms")
-            try:
-                return int(round(float(val)))
-            except Exception:
-                return None
-        return None
+    def _extractIp(self, outputStr: str) -> Optional[str]:
+        m = self._reIp.search(outputStr or "")
+        return m.group(0) if m else None
 
-    def pingOnce(self) -> tuple[str | None, int | None]:
-        argsList = ["ping", "-n", "1", "-w", str(int(self.timeoutMs)), self.targetHost]
+    def _extractLatencyMs(self, outputStr: str) -> Optional[int]:
+        m = self._reTime.search(outputStr or "")
+        if not m:
+            return None
+        try:
+            return int(round(float(m.group(1))))
+        except Exception:
+            return None
 
+    def _run(self, argsList: list[str]) -> tuple[int, str]:
         try:
             resObj = subprocess.run(argsList, capture_output=True, text=True)
         except Exception:
-            return None, None
+            return 999, ""
+        out = (resObj.stdout or "") + "\n" + (resObj.stderr or "")
+        return int(resObj.returncode), out
 
-        outputStr = (resObj.stdout or "") + "\n" + (resObj.stderr or "")
-        ipVal = self.extractIp(outputStr)
-        latencyMs = self.extractLatencyMs(outputStr) if resObj.returncode == 0 else None
-        return ipVal, latencyMs
+    def _buildPingArgs(self) -> list[str]:
+        t = self.targetHost
+        ms = max(1, int(self.timeoutMs))
+
+        if os.name == "nt":
+            # Windows: -n 1 (count), -w <ms> (timeout)
+            return ["ping", "-n", "1", "-w", str(ms), t]
+
+        # Linux/iputils: -c 1 (count), -W <sec> (timeout per reply)
+        sec = max(1, int(round(ms / 1000.0)))
+        return ["ping", "-c", "1", "-W", str(sec), t]
+
+    def pingOnce(self) -> tuple[Optional[str], Optional[int]]:
+        pingArgs = self._buildPingArgs()
+        rc, outputStr = self._run(pingArgs)
+
+        ipVal = self._extractIp(outputStr)
+
+        if rc == 0:
+            latencyMs = self._extractLatencyMs(outputStr)
+            return ipVal, latencyMs
+
+        return ipVal, None
+
+
 
 
 class PingPlugin(PluginBase):
@@ -101,7 +119,7 @@ class PingPlugin(PluginBase):
 
         threading.Thread(target=self._runTracert, daemon=True).start()
 
-
+    # TODO: make tracert linuxcompatible
     def _runTracert(self) -> None:
         target = self.ping.targetHost
         self.writeLog(f"TRACERT {target}")
