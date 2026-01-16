@@ -7,7 +7,10 @@ Overlord is a lightweight, terminal-based monitoring and control tool for tempor
 
 Overlord uses a plugin-based architecture: plugins are configured per host via TOML, run independently, report status to the UI, and may expose interactive commands. 
 
-Overlord currently supports Windows only due to its use of msvcrt for keyboard handling. 
+~~Overlord currently supports Windows only due to its use of msvcrt for keyboard handling.~~
+Overlord supports Windows and Linux input, but plugins are not yet Linux-ready.
+
+
 ## Install
 
 - Clone the repository
@@ -17,6 +20,7 @@ Overlord currently supports Windows only due to its use of msvcrt for keyboard h
 ## Requirements:
 
 ```
+python_version >= "3.11"
 rich>=13.7.0
 tomli
 ```
@@ -48,6 +52,7 @@ Each TOML file defines **exactly one host**.
 ### Minimal example
 
 ```toml
+
 name = "controller-01"
 host = "192.168.1.50"
 
