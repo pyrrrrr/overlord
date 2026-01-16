@@ -25,7 +25,7 @@ class KeyReader:
         self._t = threading.Thread(target=self._loop, daemon=True, name="KeyReader")
         self._t.start()
 
-        # Multi-terminal mappings (readchar normalisiert vieles, aber nicht alles)
+        
         self._rawMap: dict[str, str] = {
             "\x1b[A": "KEY_UP",
             "\x1b[B": "KEY_DOWN",
@@ -36,21 +36,21 @@ class KeyReader:
             "\x1bOP": "KEY_F1",
             "\x1b[11~": "KEY_F1",
 
-            "\x08": "CTRL_LEFT",   # CTRL+H
-            "\x0c": "CTRL_RIGHT",  # CTRL+L
+            "\x08": "CTRL_LEFT",   #
+            "\x0c": "CTRL_RIGHT", 
 
-            # --- Windows extended keys (readchar may return 2-byte sequences) ---
+            
             "\x00H": "KEY_UP",
             "\x00P": "KEY_DOWN",
             "\x00K": "KEY_LEFT",
             "\x00M": "KEY_RIGHT",
 
-            "\x00s": "CTRL_LEFT",   # Ctrl+Left Arrow
-            "\x00t": "CTRL_RIGHT",  # Ctrl+Right Arrow
+            "\x00s": "CTRL_LEFT",   
+            "\x00t": "CTRL_RIGHT", 
 
-            "\x00;": "KEY_F1",      # F1 on Windows (msvcrt: ch2 == ';')
+            "\x00;": "KEY_F1",   
 
-            # manchmal auch mit \xe0 prefix (je nach API/terminal)
+            
             "\xe0H": "KEY_UP",
             "\xe0P": "KEY_DOWN",
             "\xe0K": "KEY_LEFT",
@@ -60,7 +60,7 @@ class KeyReader:
             "\xe0;": "KEY_F1",
         }
 
-        # readchar.key constants (plattform-/terminalabhängig, aber häufig stabil)
+        
         self._keyConstMap: dict[str, str] = {
             key.UP: "KEY_UP",
             key.DOWN: "KEY_DOWN",
