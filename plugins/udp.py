@@ -43,6 +43,12 @@ class HostStats:
         self.pps: float = 0.0
 
 
+
+### TODO:
+### remove unused variables etc
+### 
+
+
 class UdpListener:
     def __init__(self, *, bindIp: str, port: int, emitEverySec: float) -> None:
         self.bindIp = str(bindIp)
@@ -55,8 +61,8 @@ class UdpListener:
 
         self.lockObj = threading.Lock()
 
-        self.keyMapLower: dict[str, str] = {}  # incoming name/alias -> canonical hostKey
-        self.statsByHost: dict[str, HostStats] = {}  # canonical hostKey -> stats
+        self.keyMapLower: dict[str, str] = {} 
+        self.statsByHost: dict[str, HostStats] = {}
         self.subsByHost: dict[str, list["UdpPlugin"]] = {}
 
     def start(self) -> None:
